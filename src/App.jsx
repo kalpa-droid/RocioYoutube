@@ -69,7 +69,17 @@ export default function App() {
     setDeferredPrompt(null);
   };
 
-  // --- 1. LÓGICA DE DESCARGA DIRECTA (Vía API Pública) ---
+  // --- 1. LÓGICA DE DESCARGA DIRECTA (Vía API Pública Rotativa / Failover) ---
+  const COBALT_INSTANCES = [
+    "https://api.cobalt.tools/api/json",
+    "https://cobalt.colinbox.cc/api/json",
+    "https://cobalt.cr.us.kg/api/json",
+    "https://cobalt-api.kwi.sk/api/json",
+    "https://api.cobalt.best/api/json",
+    "https://cobalt.foobar.cloud/api/json",
+    "https://cobalt.0x.ax/api/json"
+  ];
+
   const handleDownload = async () => {
     if (!url) {
       setError("Por favor, ingresa un enlace válido de YouTube.");
@@ -78,43 +88,62 @@ export default function App() {
     
     setLoading(true);
     setError(null);
+    let success = false;
+    let lastErrorMessage = "";
 
-    try {
-      // Utilizamos Cobalt API (pública, sin anuncios) para procesar el video.
-      const response = await fetch("https://api.cobalt.tools/api/json", {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: url,
-          vQuality: quality === "audio" ? "720" : quality,
-          isAudioOnly: quality === "audio",
-          aFormat: "mp3",
-          filenamePattern: "classic"
-        }),
-      });
+    for (let i = 0; i < COBALT_INSTANCES.length; i++) {
+      const currentInstance = COBALT_INSTANCES[i];
+      console.log(`Intentando descarga con instancia ${i + 1}/${COBALT_INSTANCES.length}: ${currentInstance}`);
+      
+      try {
+        const response = await fetch(currentInstance, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: url,
+            vQuality: quality === "audio" ? "720" : quality,
+            isAudioOnly: quality === "audio",
+            aFormat: "mp3",
+            filenamePattern: "classic"
+          }),
+        });
 
-      const data = await response.json();
+        if (!response.ok) {
+          throw new Error(`Código de estado HTTP: ${response.status}`);
+        }
 
-      if (data.status === "error" || data.status === "rate-limit") {
-        setError(data.text || "Error en el servidor de descarga.");
-      } else if (data.url) {
-        // Mejor compatibilidad multiplataforma
-        const link = document.createElement('a');
-        link.href = data.url;
-        link.setAttribute('download', ''); 
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const data = await response.json();
+
+        if (data.status === "error" || data.status === "rate-limit") {
+          console.warn(`Instancia ${currentInstance} falló:`, data.text);
+          lastErrorMessage = data.text || "La API reportó saturación o límite de peticiones.";
+          continue; // Pasa a la siguiente instancia
+        } else if (data.url) {
+          // Descarga exitosa
+          const link = document.createElement('a');
+          link.href = data.url;
+          link.setAttribute('download', ''); 
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          success = true;
+          break; // Detener bucle
+        }
+      } catch (err) {
+        console.warn(`Error de red o conexión en instancia ${currentInstance}:`, err.message || err);
+        lastErrorMessage = err.message || "Error de conexión o bloqueo de CORS.";
+        // Continuar intentando con la siguiente
       }
-    } catch (err) {
-      setError("Error de red. La API de conversión podría estar saturada o bloqueada.");
-    } finally {
-      setLoading(false);
     }
+
+    if (!success) {
+      setError(`Todas las API de conversión están saturadas o bloqueadas temporalmente por YouTube. Último reporte: "${lastErrorMessage}". Por favor, reintenta en unos instantes.`);
+    }
+    setLoading(false);
   };
 
   // --- 2. LÓGICA DE PURGA DE SUBTÍTULOS (Reemplazo de sed/awk) ---
