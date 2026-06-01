@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daimokugrama - Sucesores</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFE100">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Daimokugrama">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'pop-yellow': '#FFE100',
+              'pop-cyan': '#00E5FF',
+              'pop-magenta': '#FF007F',
+              'pop-red': '#FF3333',
+              'pop-green': '#00FF66',
+              'green-pop': '#00FF66',
+              'black-pop': '#111111',
+            }
+          }
+        }
+      }
+    </script>
+    <!-- Tipografías -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --pop-yellow: #FFE100;
+            --pop-cyan: #00E5FF;
+            --pop-magenta: #FF007F;
+            --pop-red: #FF3333;
+            --pop-green: #00FF66;
+            --black: #111111;
+            --box-size: 20px; /* Tamaño mucho más grande y cómodo para evitar toques accidentales */
+        }
+
+        body {
+            background-color: #f4f4f4;
+            background-image: radial-gradient(circle, #d1d1d1 15%, transparent 16%);
+            background-size: 15px 15px;
+            color: var(--black);
+            font-family: 'Comic Neue', cursive;
+            font-weight: 700;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .font-bangers { font-family: 'Bangers', cursive; letter-spacing: 1.5px; }
+
+        /* Contenedores Principales - Ocupan al menos la mitad de la pantalla (50vh) */
+        .pop-card {
+            border: 5px solid var(--black);
+            box-shadow: 8px 8px 0px var(--black);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            min-height: 50vh; /* Mitad de la pantalla */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Animaciones */
+        .animate-pulse-fast { animation: pulseFast 1.5s infinite; }
+        @keyframes pulseFast {
+            0%, 100% { transform: scale(1); text-shadow: 4px 4px 0px var(--pop-cyan); }
+            50% { transform: scale(1.05); text-shadow: 6px 6px 0px var(--pop-magenta); }
+        }
+
+        .animate-wobble { animation: wobble 3s ease-in-out infinite; }
+        @keyframes wobble {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+
+        /* Globo de Diálogo para el Aliento */
+        .speech-bubble {
+            background: #fff; border: 4px solid var(--black);
+            border-radius: 16px; padding: 20px;
+            box-shadow: 6px 6px 0px var(--black);
+            position: relative; width: 100%;
+        }
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -24px; left: 30px;
+            border-width: 24px 24px 0; border-style: solid;
+            border-color: var(--black) transparent transparent;
+        }
+        .speech-bubble::before {
+            content: ''; position: absolute; bottom: -16px; left: 33px;
+            border-width: 17px 17px 0; border-style: solid;
+            border-color: #fff transparent transparent; z-index: 1;
+        }
+
+        /* --- DAIMOKUGRAMA GRID CON SCROLL HORIZONTAL POP-ART --- */
+        .daimokugrama-wrapper {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            gap: 16px;
+            padding: 20px;
+            width: 100%;
+            overflow-x: auto;
+            background-color: var(--pop-cyan);
+            border: 4px solid var(--black);
+            box-shadow: inset 4px 4px 0px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+        }
+
+        /* Custom scrollbar para la grilla estilo Pop-Art */
+        .daimokugrama-wrapper::-webkit-scrollbar {
+            height: 12px;
+        }
+        .daimokugrama-wrapper::-webkit-scrollbar-track {
+            background: #fff;
+            border: 3px solid var(--black);
+            border-radius: 6px;
+        }
+        .daimokugrama-wrapper::-webkit-scrollbar-thumb {
+            background: var(--pop-magenta);
+            border: 2px solid var(--black);
+            border-radius: 6px;
+        }
+
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(6, var(--box-size)); 
+            grid-template-rows: repeat(10, var(--box-size));
+            gap: 2px;
+            flex-shrink: 0;
+            scroll-snap-align: start;
+        }
+        .box { width: 100%; height: 100%; }
+        .box.active-area {
+            background-color: #fff; border: 2px solid var(--black);
+            cursor: pointer; transition: transform 0.1s, background-color 0.2s;
+            border-radius: 3px;
+        }
+        .box.active-area:hover { transform: scale(1.15); z-index: 10; position: relative; }
+        .box.filled { background-color: var(--pop-magenta); }
+
+        @media (max-width: 768px) {
+            :root { --box-size: 18px; } /* Excelente tamaño de toque en tablets */
+            .pop-card { min-height: 45vh; padding: 15px; }
+            .daimokugrama-wrapper { gap: 12px; padding: 16px; }
+        }
+        @media (max-width: 480px) {
+            :root { --box-size: 16px; } /* Mínimo recomendado para comodidad móvil sin desbordes */
+            .daimokugrama-wrapper { gap: 8px; padding: 12px; }
+        }
+
+        /* --- TIRADOR DE TIEMPO --- */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 15px 0; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 20px; cursor: pointer;
+            background: var(--pop-yellow); border: 4px solid var(--black);
+            border-radius: 10px; box-shadow: 4px 4px 0px var(--black);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 40px; width: 30px; border-radius: 6px;
+            background: var(--pop-cyan); border: 4px solid var(--black);
+            cursor: pointer; -webkit-appearance: none; margin-top: -14px;
+            box-shadow: 4px 4px 0px var(--black);
+        }
+
+        /* --- PALANCA FÍSICA --- */
+        .lever-slot {
+            position: relative; width: 60px; height: 110px;
+            background: #333; border: 4px solid var(--black);
+            border-radius: 30px; margin: 0 auto;
+            box-shadow: inset 4px 4px 10px rgba(0,0,0,0.8);
+            display: flex; justify-content: center; cursor: pointer;
+        }
+        .lever-track { width: 8px; height: 100%; background: #111; border-radius: 4px; opacity: 0.6; }
+        .lever-handle {
+            position: absolute; top: 8px; width: 90px; height: 35px;
+            background: var(--pop-red); border: 4px solid var(--black);
+            border-radius: 8px; box-shadow: 4px 4px 0px var(--black);
+            transition: top 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .lever-handle::after {
+            content: ''; display: block; width: 60%; height: 6px;
+            background: rgba(0,0,0,0.3); border-radius: 3px; margin: 14px auto;
+        }
+
+        /* --- INPUTS DE OBJETIVOS (RENGLONES) --- */
+        .goal-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 4px solid var(--black);
+            font-family: 'Comic Neue', cursive;
+            font-weight: 700;
+            font-size: 1.2rem;
+            padding: 8px 0;
+            outline: none;
+            color: var(--black);
+        }
+        .goal-input::placeholder { color: rgba(0,0,0,0.4); }
+        .goal-input:focus { border-bottom-color: var(--pop-magenta); }
+    </style>
+</head>
+<body class="p-4 md:p-8 pb-32"> <!-- pb-32 para dar espacio al banner inferior de instalación -->
+
+    <!-- GRILLA PRINCIPAL: 1 columna en celular (4 bloques apilados), 2 columnas en PC -->
+    <main class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+        
+        <!-- CUADRANTE 1: RELOJ Y CONTROLES (50vh) -->
+        <section class="pop-card bg-green-pop">
+            <div class="text-6xl mb-2 animate-wobble inline-block drop-shadow-lg">⏰</div>
+            
+            <div class="bg-white border-4 border-black p-2 w-full max-w-[280px] shadow-[inset_4px_4px_0px_rgba(0,0,0,0.1)] mb-4 rounded-xl text-center">
+                <div id="timeDisplay" class="font-bangers text-7xl animate-pulse-fast text-black leading-none">
+                    05:00
+                </div>
+            </div>
+
+            <div class="bg-white border-4 border-black p-4 rounded-xl shadow-[6px_6px_0px_#000] transform -rotate-1 w-full max-w-[320px] mb-6 text-center">
+                <label for="timeSlider" class="font-bangers text-2xl block mb-1">
+                    TIEMPO: <span id="sliderLabel" class="text-pop-magenta text-4xl">5</span> MIN
+                </label>
+                <input type="range" id="timeSlider" min="5" max="20" step="5" value="5">
+            </div>
+
+            <div class="flex flex-row w-full max-w-[320px] justify-between items-end">
+                <button id="startBtn" class="font-bangers text-3xl bg-pop-yellow text-black border-4 border-black px-4 py-4 rounded-xl shadow-[6px_6px_0px_#000] hover:translate-y-1 transition-transform transform rotate-2 h-max w-1/2 mr-4">
+                    ▶️ INICIAR
+                </button>
+                <div class="flex flex-col items-center w-1/2">
+                    <span class="font-bangers text-lg mb-1 bg-white px-2 border-2 border-black rounded shadow-[2px_2px_0px_#000] transform -rotate-2">DETENER</span>
+                    <div class="lever-slot" id="stopLever">
+                        <div class="lever-track"></div>
+                        <div class="lever-handle" id="leverHandle"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CUADRANTE 2: DAIMOKUGRAMA (50vh) -->
+        <section class="pop-card bg-pop-yellow">
+            <div class="flex items-center justify-between w-full mb-2">
+                <div class="w-10"></div> <!-- Espaciador para centrar -->
+                <h1 class="font-bangers text-5xl md:text-6xl text-white text-center transform -rotate-2" style="text-shadow: 4px 4px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000;">
+                    SUCESORES
+                </h1>
+                <button id="resetGridBtn" class="font-bangers text-2xl bg-pop-red text-white border-4 border-black p-1 px-3 rounded-xl shadow-[3px_3px_0px_#000] hover:translate-y-0.5 transition-transform" title="Reiniciar todo">
+                    🔄
+                </button>
+            </div>
+
+            <!-- Contador de cuadraditos disponibles de manera llamativa -->
+            <div class="mb-4 font-bangers text-lg md:text-xl bg-pop-magenta text-white inline-block px-4 py-2 border-4 border-black shadow-[4px_4px_0px_#000] transform rotate-1">
+                Cuadraditos para pintar: <span id="creditCount" class="text-pop-yellow text-3xl font-black">0</span>
+            </div>
+            
+            <div class="daimokugrama-wrapper" id="wordContainer">
+                <!-- Letras inyectadas con JS -->
+            </div>
+            
+            <div class="mt-4 flex flex-col sm:flex-row gap-2 items-center justify-center font-bangers text-base bg-white px-4 py-1 border-4 border-black shadow-[4px_4px_0px_#000] transform -rotate-1 text-center w-full">
+                <span>🔲 = 5 MINUTOS DE DAIMOKU</span>
+                <span class="hidden sm:inline">|</span>
+                <span class="text-pop-magenta animate-pulse-fast">👋 DESLIZA PARA VER LA PALABRA COMPLETA ➡️</span>
+            </div>
+        </section>
+
+        <!-- CUADRANTE 3: ALIENTO DE SENSEI (50vh) -->
+        <section class="pop-card" style="background-color: #d8b4e2;"> <!-- Fondo lila suave para contrastar -->
+            <div class="animate-wobble origin-bottom-left inline-block mb-4 self-start">
+                <h2 class="font-bangers text-white text-3xl bg-pop-magenta border-4 border-black px-4 py-1 inline-block shadow-[4px_4px_0px_#000] transform -rotate-2">
+                    ALIENTO DE SENSEI
+                </h2>
+            </div>
+            
+            <div class="speech-bubble transform rotate-1 text-[15px] md:text-[17px] leading-snug">
+                «Es magnífico que ustedes, mis jóvenes amigos, estén trazándose objetivos y esforzándose por cumplirlos, y que se basen en la práctica budista para superar sus problemas. Es la forma de hacer que la vida brille de verdad. Ahora bien, ¿por qué las oraciones al Gohonzon se traducen en resultados? Porque ustedes mismos ya poseen en forma inherente la capacidad de hacer realidad sus oraciones. <br><br>
+                El Gohonzon es como una ventana abierta al universo, mientras que Nam-myoho-renge-kyo es la contraseña que activa la Budeidad de todos los fenómenos contenidos en el cosmos. Cuando hacemos daimoku, abrimos en nuestro interior un potencial tan inmenso e infinito como el universo».
+            </div>
+            <div class="text-right mt-6 font-bold text-sm bg-white border-2 border-black p-2 inline-block self-end shadow-[2px_2px_0px_#000] transform -rotate-1">
+                — Daisaku Ikeda
+            </div>
+        </section>
+
+        <!-- CUADRANTE 4: OBJETIVOS / ESTOY ORANDO POR (50vh) -->
+        <section class="pop-card bg-pop-cyan flex flex-col justify-start">
+            <h2 class="font-bangers text-3xl md:text-4xl bg-white border-4 border-black px-4 py-2 inline-block shadow-[4px_4px_0px_#000] transform -rotate-1 mb-6 self-start w-full text-center md:text-left">
+                ESTOY ORANDO POR:
+            </h2>
+            
+            <div class="flex flex-col gap-6 w-full mt-4">
+                <!-- Renglón 1 -->
+                <div class="flex items-end gap-3 w-full">
+                    <span class="font-bangers text-3xl text-pop-magenta drop-shadow-md">★</span>
+                    <input type="text" id="obj1" class="goal-input" placeholder="Escribe tu primer objetivo...">
+                </div>
+                <!-- Renglón 2 -->
+                <div class="flex items-end gap-3 w-full">
+                    <span class="font-bangers text-3xl text-pop-magenta drop-shadow-md">★</span>
+                    <input type="text" id="obj2" class="goal-input" placeholder="...">
+                </div>
+                <!-- Renglón 3 -->
+                <div class="flex items-end gap-3 w-full">
+                    <span class="font-bangers text-3xl text-pop-yellow" style="-webkit-text-stroke: 1px black;">★</span>
+                    <input type="text" id="obj3" class="goal-input" placeholder="...">
+                </div>
+                <!-- Renglón 4 -->
+                <div class="flex items-end gap-3 w-full">
+                    <span class="font-bangers text-3xl text-pop-yellow" style="-webkit-text-stroke: 1px black;">★</span>
+                    <input type="text" id="obj4" class="goal-input" placeholder="...">
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- BANNER DE INSTALACIÓN PWA (Android / iOS) -->
+    <div id="pwaInstallBanner" class="fixed bottom-0 left-0 right-0 z-50 p-4 bg-pop-yellow border-t-8 border-black shadow-[0_-8px_0px_rgba(0,0,0,0.15)] flex flex-col md:flex-row items-center justify-between gap-4 transition-transform duration-500 translate-y-full">
+        <div class="flex items-center gap-4">
+            <img src="icon-192.png" alt="Icono Daimokugrama" class="w-16 h-16 rounded-2xl border-4 border-black shadow-[3px_3px_0px_#000] flex-shrink-0">
+            <div>
+                <h3 class="font-bangers text-2xl md:text-3xl text-black leading-tight">¡AÑADE DAIMOKUGRAMA A TU INICIO! 📲</h3>
+                <p id="pwaInstallText" class="text-sm md:text-base text-black font-bold font-sans">Instala esta aplicación en tu celular para acceder de forma instantánea y usarla sin internet.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+            <button id="pwaInstallBtn" class="font-bangers text-xl md:text-2xl bg-pop-magenta text-white border-4 border-black px-6 py-2 rounded-xl shadow-[4px_4px_0px_#000] hover:translate-y-0.5 transition-transform w-full md:w-auto text-center">
+                📲 INSTALAR AHORA
+            </button>
+            <button id="pwaCloseBtn" class="font-bangers text-xl bg-white text-black border-4 border-black px-4 py-2 rounded-xl shadow-[4px_4px_0px_#000] hover:translate-y-0.5 transition-transform">
+                ❌
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. REGISTRO DE SERVICE WORKER ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
+                    .catch(err => console.error('Error al registrar el Service Worker:', err));
+            });
+        }
+
+        // --- 2. CONTROLADORES DE INSTALACIÓN PWA ---
+        let deferredPrompt;
+        const installBanner = document.getElementById('pwaInstallBanner');
+        const installBtn = document.getElementById('pwaInstallBtn');
+        const closeBtn = document.getElementById('pwaCloseBtn');
+        const installText = document.getElementById('pwaInstallText');
+
+        // Capturar prompt de instalación en Android/Chrome
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Mostrar banner
+            installBanner.classList.remove('translate-y-full');
+        });
+
+        // Detectar si es iOS y si no está en pantalla de inicio ya (standalone)
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        if (isIOS && !isStandalone) {
+            // Modificar textos explicativos de instalación en iOS
+            installText.innerHTML = "Toca el botón <strong>Compartir 📤</strong> abajo en Safari y selecciona <strong>'Agregar a inicio' ➕</strong>.";
+            installBtn.innerHTML = "📤 CÓMO INSTALAR";
+            
+            // Mostrar el banner de manera proactiva en iOS
+            setTimeout(() => {
+                installBanner.classList.remove('translate-y-full');
+            }, 1500);
+        }
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`Elección del usuario de instalación: ${outcome}`);
+                deferredPrompt = null;
+                installBanner.classList.add('translate-y-full');
+            } else if (isIOS) {
+                alert("Para instalar en tu iPhone/iPad:\n\n1. Pulsa el botón de compartir 📤 en la parte inferior de Safari.\n2. Desliza hacia abajo y selecciona 'Agregar a inicio' ➕.\n3. ¡Listo! Se abrirá como una aplicación nativa.");
+            }
+        });
+
+        closeBtn.addEventListener('click', () => {
+            installBanner.classList.add('translate-y-full');
+        });
+
+        // --- 3. DAIMOKUGRAMA LOGIC ---
+        const fonts = {
+            'S': [1,1,1,1,1,1, 1,1,1,1,1,1, 1,1,0,0,0,0, 1,1,0,0,0,0, 1,1,1,1,1,1, 1,1,1,1,1,1, 0,0,0,0,1,1, 0,0,0,0,1,1, 1,1,1,1,1,1, 1,1,1,1,1,1],
+            'U': [1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,1,1,1,1, 1,1,1,1,1,1],
+            'C': [1,1,1,1,1,1, 1,1,1,1,1,1, 1,1,0,0,0,0, 1,1,0,0,0,0, 1,1,0,0,0,0, 1,1,0,0,0,0, 1,1,0,0,0,0, 1,1,0,0,0,0, 1,1,1,1,1,1, 1,1,1,1,1,1],
+            'E': [1,1,1,1,1,1, 1,1,1,1,1,1, 1,1,0,0,0,0, 1,1,0,0,0,0, 1,1,1,1,1,1, 1,1,1,1,1,1, 1,1,0,0,0,0, 1,1,0,0,0,0, 1,1,1,1,1,1, 1,1,1,1,1,1],
+            'O': [1,1,1,1,1,1, 1,1,1,1,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,1,1,1,1, 1,1,1,1,1,1],
+            'R': [1,1,1,1,1,1, 1,1,1,1,1,1, 1,1,0,0,1,1, 1,1,0,0,1,1, 1,1,1,1,1,1, 1,1,1,1,1,1, 1,1,1,1,0,0, 1,1,0,1,1,0, 1,1,0,0,1,1, 1,1,0,0,1,1]
+        };
+
+        const word = "SUCESORES";
+        const container = document.getElementById('wordContainer');
+        const storageKey = 'sucesores_progreso_v3';
+        const creditsKey = 'sucesores_creditos_v3';
+
+        let progress = JSON.parse(localStorage.getItem(storageKey)) || {};
+        let credits = parseInt(localStorage.getItem(creditsKey)) || 0;
+        let boxCounter = 0;
+
+        const creditCountSpan = document.getElementById('creditCount');
+
+        function updateCreditsDisplay() {
+            creditCountSpan.textContent = credits;
+        }
+
+        word.split('').forEach((letter) => {
+            const letterGrid = document.createElement('div');
+            letterGrid.className = 'letter-grid';
+            letterGrid.style.flexShrink = '0'; // Evita que las letras se achiquen o deformen
+            
+            fonts[letter].forEach((val) => {
+                const box = document.createElement('div');
+                box.className = 'box';
+                
+                if (val === 1) {
+                    box.classList.add('active-area');
+                    const currentId = boxCounter++;
+                    
+                    if (progress[currentId]) { box.classList.add('filled'); }
+
+                    box.addEventListener('click', () => {
+                        // REGLA 2: No se puede despintar ninguno
+                        if (box.classList.contains('filled')) {
+                            alert('⭐ ¡Este cuadradito ya está pintado y completado! No se puede despintar.');
+                            return;
+                        }
+                        
+                        // REGLA 1: Solo se puede pintar si hay cuadraditos/créditos acumulados por cronómetro terminado
+                        if (credits <= 0) {
+                            alert('⏰ ¡No tienes cuadraditos disponibles para pintar!\n\nCompleta una sesión del cronómetro de Daimoku (mínimo 5 minutos) para ganar créditos y poder pintar tu Daimokugrama.');
+                            return;
+                        }
+                        
+                        // Pintar el cuadradito
+                        box.classList.add('filled');
+                        progress[currentId] = true;
+                        localStorage.setItem(storageKey, JSON.stringify(progress));
+                        
+                        // Consumir 1 crédito de cuadradito
+                        credits--;
+                        localStorage.setItem(creditsKey, credits);
+                        updateCreditsDisplay();
+                    });
+                }
+                letterGrid.appendChild(box);
+            });
+            container.appendChild(letterGrid);
+        });
+
+        // --- 4. TIMING Y CONTROLES ---
+        let timerInterval;
+        let timeRemaining = 300; 
+        let isRunning = false;
+        let audioCtx;
+
+        const timeDisplay = document.getElementById('timeDisplay');
+        const timeSlider = document.getElementById('timeSlider');
+        const sliderLabel = document.getElementById('sliderLabel');
+        const startBtn = document.getElementById('startBtn');
+        const stopLever = document.getElementById('stopLever');
+        const leverHandle = document.getElementById('leverHandle');
+        const resetGridBtn = document.getElementById('resetGridBtn');
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function updateDisplay(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            timeDisplay.textContent = `${m}:${s}`;
+        }
+
+        timeSlider.addEventListener('input', (e) => {
+            sliderLabel.textContent = e.target.value;
+            if(!isRunning) {
+                timeRemaining = parseInt(e.target.value) * 60;
+                updateDisplay(timeRemaining);
+            }
+        });
+
+        function playPopSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            setTimeout(() => osc.stop(), 500);
+        }
+
+        startBtn.addEventListener('click', () => {
+            initAudio();
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                startBtn.innerHTML = "▶️ CONTINUAR";
+            } else {
+                isRunning = true;
+                startBtn.innerHTML = "⏸️ PAUSAR";
+                
+                timerInterval = setInterval(() => {
+                    timeRemaining--;
+                    updateDisplay(timeRemaining);
+                    
+                    if (timeRemaining <= 0) {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        startBtn.innerHTML = "▶️ INICIAR";
+                        playPopSound();
+
+                        const minsSelected = parseInt(timeSlider.value);
+                        const boxesToPaint = minsSelected / 5;
+                        const plural = boxesToPaint > 1 ? "cuadraditos" : "cuadradito";
+
+                        // REGLA 1: Ganar créditos/cuadraditos al terminar
+                        credits += boxesToPaint;
+                        localStorage.setItem(creditsKey, credits);
+                        updateCreditsDisplay();
+
+                        setTimeout(() => {
+                            alert(`¡TIEMPO CUMPLIDO! 🌟\n\nHas completado ${minsSelected} minutos de Daimoku y ganaste ${boxesToPaint} ${plural}.\n\n¡Toca los espacios vacíos del Daimokugrama para pintarlos!`);
+                            timeRemaining = parseInt(timeSlider.value) * 60;
+                            updateDisplay(timeRemaining);
+                        }, 100);
+                    }
+                }, 1000);
+            }
+        });
+
+        // La Palanca
+        stopLever.addEventListener('click', () => {
+            leverHandle.style.top = '65px';
+            clearInterval(timerInterval);
+            isRunning = false;
+            startBtn.innerHTML = "▶️ INICIAR";
+            timeRemaining = parseInt(timeSlider.value) * 60;
+            updateDisplay(timeRemaining);
+
+            setTimeout(() => { leverHandle.style.top = '8px'; }, 300);
+        });
+
+        // Reset Daimokugrama (Pide confirmación antes de reiniciar TODO, tal como se solicitó)
+        resetGridBtn.addEventListener('click', () => {
+            if (confirm('⚠️ ¿Estás seguro de que quieres reiniciar TODO?\n\nEsta acción borrará todas las letras que has pintado y restablecerá tus cuadraditos ganados a 0. No podrás recuperarlos.')) {
+                progress = {};
+                credits = 0;
+                localStorage.setItem(storageKey, JSON.stringify(progress));
+                localStorage.setItem(creditsKey, credits);
+                
+                document.querySelectorAll('.box.active-area').forEach(box => {
+                    box.classList.remove('filled');
+                });
+                
+                updateCreditsDisplay();
+            }
+        });
+
+        // --- 5. GUARDADO DE OBJETIVOS (Memoria Local) ---
+        const inputs = ['obj1', 'obj2', 'obj3', 'obj4'];
+        
+        inputs.forEach(id => {
+            const inputField = document.getElementById(id);
+            // Cargar lo que estaba guardado
+            const savedValue = localStorage.getItem('sucesores_' + id);
+            if (savedValue) {
+                inputField.value = savedValue;
+            }
+            
+            // Guardar automáticamente al escribir
+            inputField.addEventListener('input', (e) => {
+                localStorage.setItem('sucesores_' + id, e.target.value);
+            });
+        });
+
+        // Inicializar visualización de créditos ganados al cargar
+        updateCreditsDisplay();
+        updateDisplay(timeRemaining);
+
+    </script>
+</body>
+</html>
