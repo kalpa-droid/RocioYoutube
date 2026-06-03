@@ -18,10 +18,20 @@ except ImportError:
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", "yt-dlp"], check=True)
         import yt_dlp
+    except subprocess.CalledProcessError:
+        try:
+            print("Reintentando instalación con --break-system-packages...")
+            subprocess.run([sys.executable, "-m", "pip", "install", "yt-dlp", "--break-system-packages"], check=True)
+            import yt_dlp
+        except Exception as e2:
+            print(f"Error al instalar yt-dlp: {e2}")
+            print("Por favor, instala yt-dlp manualmente: pip install yt-dlp")
+            sys.exit(1)
     except Exception as e:
         print(f"Error al instalar yt-dlp: {e}")
         print("Por favor, instala yt-dlp manualmente: pip install yt-dlp")
         sys.exit(1)
+
 
 def get_download_dir():
     # Detect Android Termux storage or standard OS Downloads folder
@@ -302,12 +312,27 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
 
 def main():
     PORT = 5000
-    server_address = ('', PORT)
     
     # Change working directory to script location
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     
-    httpd = ThreadingHTTPServer(server_address, AppRequestHandler)
+    httpd = None
+    while PORT < 5100:
+        try:
+            server_address = ('', PORT)
+            httpd = ThreadingHTTPServer(server_address, AppRequestHandler)
+            break
+        except OSError as e:
+            import errno
+            if e.errno == errno.EADDRINUSE:
+                PORT += 1
+            else:
+                raise e
+
+    if not httpd:
+        print("No se pudo iniciar el servidor. Todos los puertos entre 5000 y 5100 están en uso.")
+        sys.exit(1)
+        
     print(f"Servidor local iniciado en: http://localhost:{PORT}")
     print(f"Los archivos se guardarán en: {get_download_dir()}")
     
