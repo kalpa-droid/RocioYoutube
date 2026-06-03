@@ -55,9 +55,12 @@ async function analyzeUrl() {
   const url = urlInput.value.trim();
   if (!url) return;
 
-  // Show loader and hide results
+  // Show loader and hide results/fallback
   loader.style.display = 'flex';
   resultContainer.style.display = 'none';
+  if (window.fallbackContainer) {
+    fallbackContainer.style.display = 'none';
+  }
   btnAnalyze.disabled = true;
 
   try {
@@ -72,12 +75,18 @@ async function analyzeUrl() {
     switchTab('video');
     resultContainer.style.display = 'block';
   } catch (error) {
-    alert(error.message);
+    console.error('Error al analizar la URL:', error.message);
+    if (window.fallbackContainer) {
+      fallbackContainer.style.display = 'block';
+    } else {
+      alert(`Error al analizar la URL: ${error.message}`);
+    }
   } finally {
     loader.style.display = 'none';
     btnAnalyze.disabled = false;
   }
 }
+
 
 function displayVideoInfo() {
   videoThumbnail.src = currentVideoData.thumbnail;
@@ -425,3 +434,37 @@ function formatDuration(seconds) {
   result += `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   return result;
 }
+
+// Fallback Downloader Setup
+const fallbackContainer = document.getElementById('fallbackContainer');
+const btnFallbackDownload = document.getElementById('btnFallbackDownload');
+const fallbackQuality = document.getElementById('fallbackQuality');
+
+if (btnFallbackDownload) {
+  btnFallbackDownload.addEventListener('click', () => {
+    const url = urlInput.value.trim();
+    if (!url) {
+      alert('Por favor, ingresa un enlace de YouTube válido.');
+      return;
+    }
+    
+    const quality = fallbackQuality.value;
+    let params = { url: url };
+    
+    if (quality === 'audio') {
+      params.type = 'audio';
+      params.filename = 'audio.mp3';
+    } else if (quality === '1080') {
+      params.type = 'video';
+      params.format = 'best';
+      params.filename = 'video_1080p.mp4';
+    } else {
+      params.type = 'video';
+      params.format = '720';
+      params.filename = 'video_720p.mp4';
+    }
+    
+    startWebDownload(params);
+  });
+}
+
