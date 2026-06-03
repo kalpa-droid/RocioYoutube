@@ -102,10 +102,7 @@ function renderOptions() {
   if (!currentVideoData) return;
 
   if (activeTab === 'video') {
-    // Show muxed streams first, then video_only streams
     const formats = currentVideoData.formats.filter(f => f.type === 'muxed' || f.type === 'video_only');
-    
-    // Sort by height descending
     formats.sort((a, b) => (b.height || 0) - (a.height || 0));
 
     formats.forEach(f => {
@@ -113,7 +110,8 @@ function renderOptions() {
       const label = f.type === 'muxed' ? `Video ${f.height}p (Con Audio)` : `Video ${f.height}p (Solo Video)`;
       const meta = `${f.ext.toUpperCase()} • ${sizeStr} • Codec: ${f.format_note || 'N/A'}`;
       
-      const item = createOptionItem(label, meta, f.url, `${currentVideoData.title}_${f.height}p.${f.ext}`);
+      const filename = `${currentVideoData.title}_${f.height}p.${f.ext}`;
+      const item = createOptionItem(label, meta, f.format_id, 'video', filename);
       optionsList.appendChild(item);
     });
 
@@ -122,8 +120,6 @@ function renderOptions() {
     }
   } else if (activeTab === 'audio') {
     const formats = currentVideoData.formats.filter(f => f.type === 'audio_only');
-    
-    // Sort by filesize/quality descending
     formats.sort((a, b) => (b.filesize || 0) - (a.filesize || 0));
 
     formats.forEach(f => {
@@ -131,7 +127,8 @@ function renderOptions() {
       const label = `Audio (${f.format_note || f.ext.toUpperCase()})`;
       const meta = `${f.ext.toUpperCase()} • ${sizeStr}`;
       
-      const item = createOptionItem(label, meta, f.url, `${currentVideoData.title}_audio.${f.ext}`);
+      const filename = `${currentVideoData.title}_audio.mp3`;
+      const item = createOptionItem(label, meta, 'bestaudio', 'audio', filename);
       optionsList.appendChild(item);
     });
 
@@ -145,7 +142,8 @@ function renderOptions() {
       const label = `Subtítulos: ${sub.lang.toUpperCase()}`;
       const meta = `Formato: ${sub.ext.toUpperCase()} • Limpio (.TXT)`;
       
-      const item = createSubtitleOptionItem(label, meta, sub.url, `${currentVideoData.title}_sub_${sub.lang}.txt`);
+      const filename = `${currentVideoData.title}_sub_${sub.lang}.txt`;
+      const item = createSubtitleOptionItem(label, meta, sub.url, filename);
       optionsList.appendChild(item);
     });
 
@@ -155,18 +153,97 @@ function renderOptions() {
   }
 }
 
-function createOptionItem(label, meta, downloadUrl, filename) {
+// Select progress components
+const progressPanel = document.getElementById('progressPanel');
+const progressTitle = document.getElementById('progressTitle');
+const progressSpeed = document.getElementById('progressSpeed');
+const progressBar = document.getElementById('progressBar');
+const progressPercent = document.getElementById('progressPercent');
+
+function startLocalDownload(params) {
+  progressPanel.style.display = 'block';
+  progressTitle.textContent = 'Iniciando descarga...';
+  progressSpeed.textContent = '0 KB/s';
+  progressBar.style.width = '0%';
+  progressPercent.textContent = '0%';
+
+  const downloadLinks = document.querySelectorAll('.download-link');
+  downloadLinks.forEach(btn => btn.setAttribute('disabled', 'true'));
+  btnAnalyze.disabled = true;
+
+  const queryStr = new URLSearchParams(params).toString();
+  const eventSource = new EventSource(`/api/download?${queryStr}`);
+
+  eventSource.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.status === 'downloading') {
+      const pct = data.percent.toFixed(1);
+      progressTitle.textContent = `Descargando: ${params.filename}`;
+      progressSpeed.textContent = data.speed;
+      progressBar.style.width = `${pct}%`;
+      progressPercent.textContent = `${pct}%`;
+    } else if (data.status === 'completed') {
+      progressTitle.textContent = '¡Completado!';
+      progressSpeed.textContent = 'Guardado';
+      progressBar.style.width = '100%';
+      progressPercent.textContent = '100%';
+      alert(`¡Descarga completada!\nArchivo guardado en:\n${data.path}`);
+      
+      eventSource.close();
+      enableActions();
+    } else if (data.status === 'error') {
+      progressTitle.textContent = 'Error en la descarga';
+      progressSpeed.textContent = '';
+      alert(`Error en la descarga:\n${data.message}`);
+      
+      eventSource.close();
+      enableActions();
+    }
+  };
+
+  eventSource.onerror = () => {
+    progressTitle.textContent = 'Error de conexión';
+    progressSpeed.textContent = '';
+    alert('Error: Conexión con el servidor interrumpida.');
+    eventSource.close();
+    enableActions();
+  };
+}
+
+function enableActions() {
+  const downloadLinks = document.querySelectorAll('.download-link');
+  downloadLinks.forEach(btn => btn.removeAttribute('disabled'));
+  btnAnalyze.disabled = false;
+}
+
+function createOptionItem(label, meta, formatId, type, filename) {
   const li = document.createElement('div');
   li.className = 'option-item';
-  li.innerHTML = `
-    <div class="option-info">
-      <span class="option-label">${label}</span>
-      <span class="option-meta">${meta}</span>
-    </div>
-    <a href="${downloadUrl}" target="_blank" download="${filename}" class="download-link" title="Descargar">
-      <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
-    </a>
+  
+  const info = document.createElement('div');
+  info.className = 'option-info';
+  info.innerHTML = `
+    <span class="option-label">${label}</span>
+    <span class="option-meta">${meta}</span>
   `;
+
+  const btn = document.createElement('button');
+  btn.className = 'download-link';
+  btn.title = 'Descargar';
+  btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>`;
+  
+  btn.addEventListener('click', () => {
+    startLocalDownload({
+      url: urlInput.value.trim(),
+      format: formatId,
+      type: type,
+      filename: filename
+    });
+  });
+
+  li.appendChild(info);
+  li.appendChild(btn);
   return li;
 }
 
@@ -186,26 +263,13 @@ function createSubtitleOptionItem(label, meta, subUrl, filename) {
   btn.title = 'Descargar Limpio';
   btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>`;
   
-  btn.addEventListener('click', async () => {
-    btn.disabled = true;
-    try {
-      const res = await fetch(`/api/subtitles?url=${encodeURIComponent(subUrl)}`);
-      if (!res.ok) throw new Error('Error al descargar subtítulos');
-      const text = await res.text();
-      
-      // Trigger browser download
-      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      btn.disabled = false;
-    }
+  btn.addEventListener('click', () => {
+    startLocalDownload({
+      url: urlInput.value.trim(),
+      type: 'subtitles',
+      sub_url: subUrl,
+      filename: filename
+    });
   });
 
   li.appendChild(info);
@@ -225,7 +289,7 @@ function formatDuration(seconds) {
   
   let result = '';
   if (hrs > 0) {
-    result += `${hrs.toString().padLeft(2, '0')}:`;
+    result += `${hrs.toString().padStart(2, '0')}:`;
   }
   result += `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   return result;
