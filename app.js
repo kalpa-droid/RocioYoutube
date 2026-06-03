@@ -211,6 +211,137 @@ function startLocalDownload(params) {
   };
 }
 
+async function startWebDownload(params) {
+  const downloadLinks = document.querySelectorAll('.download-link');
+  downloadLinks.forEach(btn => btn.setAttribute('disabled', 'true'));
+  btnAnalyze.disabled = true;
+
+  progressPanel.style.display = 'block';
+  progressSpeed.textContent = '';
+  progressBar.style.width = '0%';
+  progressPercent.textContent = '0%';
+
+  if (params.type === 'subtitles') {
+    progressTitle.textContent = 'Obteniendo subtítulos...';
+    progressBar.style.width = '50%';
+    progressPercent.textContent = '50%';
+    
+    try {
+      const response = await fetch(`/api/subtitles?url=${encodeURIComponent(params.sub_url)}`);
+      if (!response.ok) throw new Error('No se pudieron obtener los subtítulos.');
+      const text = await response.text();
+      
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const downloadUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = params.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+      
+      progressTitle.textContent = '¡Completado!';
+      progressBar.style.width = '100%';
+      progressPercent.textContent = '100%';
+    } catch (err) {
+      alert(`Error al descargar subtítulos: ${err.message}`);
+      progressTitle.textContent = 'Error';
+    } finally {
+      enableActions();
+      setTimeout(() => { progressPanel.style.display = 'none'; }, 2000);
+    }
+    return;
+  }
+
+  progressTitle.textContent = 'Preparando descarga en la nube...';
+  progressBar.style.width = '15%';
+  progressPercent.textContent = '15%';
+
+  const COBALT_INSTANCES = [
+    "https://api.cobalt.tools/api/json",
+    "https://cobalt.colinbox.cc/api/json",
+    "https://cobalt.cr.us.kg/api/json",
+    "https://cobalt-api.kwi.sk/api/json",
+    "https://api.cobalt.best/api/json",
+    "https://cobalt.foobar.cloud/api/json",
+    "https://cobalt.0x.ax/api/json"
+  ];
+
+  let success = false;
+  let lastErrorMessage = "";
+
+  for (let i = 0; i < COBALT_INSTANCES.length; i++) {
+    const currentInstance = COBALT_INSTANCES[i];
+    progressTitle.textContent = `Descargando (Servidor ${i + 1}/${COBALT_INSTANCES.length})...`;
+    const progressVal = Math.round(15 + ((i / COBALT_INSTANCES.length) * 75));
+    progressBar.style.width = `${progressVal}%`;
+    progressPercent.textContent = `${progressVal}%`;
+
+    try {
+      const response = await fetch(currentInstance, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: params.url,
+          vQuality: params.type === "audio" ? "720" : "1080",
+          isAudioOnly: params.type === "audio",
+          aFormat: "mp3",
+          filenamePattern: "classic"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Código de estado HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.status === "error" || data.status === "rate-limit") {
+        lastErrorMessage = data.text || "La API reportó saturación o límite de peticiones.";
+        continue;
+      } else if (data.url) {
+        const link = document.createElement('a');
+        link.href = data.url;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        success = true;
+        break;
+      }
+    } catch (err) {
+      lastErrorMessage = err.message || "Error de conexión o bloqueo de CORS.";
+    }
+  }
+
+  if (success) {
+    progressTitle.textContent = '¡Completado!';
+    progressBar.style.width = '100%';
+    progressPercent.textContent = '100%';
+  } else {
+    progressTitle.textContent = 'Error';
+    alert(`Todas las API de conversión están saturadas o bloqueadas temporalmente por YouTube.\nÚltimo error: "${lastErrorMessage}"`);
+  }
+
+  enableActions();
+  setTimeout(() => { progressPanel.style.display = 'none'; }, 3000);
+}
+
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+function startDownload(params) {
+  if (isLocal) {
+    startLocalDownload(params);
+  } else {
+    startWebDownload(params);
+  }
+}
+
 function enableActions() {
   const downloadLinks = document.querySelectorAll('.download-link');
   downloadLinks.forEach(btn => btn.removeAttribute('disabled'));
@@ -234,7 +365,7 @@ function createOptionItem(label, meta, formatId, type, filename) {
   btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>`;
   
   btn.addEventListener('click', () => {
-    startLocalDownload({
+    startDownload({
       url: urlInput.value.trim(),
       format: formatId,
       type: type,
@@ -264,7 +395,7 @@ function createSubtitleOptionItem(label, meta, subUrl, filename) {
   btn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>`;
   
   btn.addEventListener('click', () => {
-    startLocalDownload({
+    startDownload({
       url: urlInput.value.trim(),
       type: 'subtitles',
       sub_url: subUrl,
