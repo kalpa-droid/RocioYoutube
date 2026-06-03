@@ -144,6 +144,7 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
                 'quiet': True,
                 'no_warnings': True,
                 'skip_download': True,
+                'cookiesfrombrowser': ('chrome', 'firefox', 'brave', 'opera', 'edge', 'chromium', 'safari', 'vivaldi'),
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(video_url, download=False)
@@ -261,6 +262,7 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
                     'progress_hooks': [make_hook(send_progress)],
                     'quiet': True,
                     'no_warnings': True,
+                    'cookiesfrombrowser': ('chrome', 'firefox', 'brave', 'opera', 'edge', 'chromium', 'safari', 'vivaldi'),
                 }
 
                 if option_type == 'video':
