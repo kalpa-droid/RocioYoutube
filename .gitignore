@@ -12,6 +12,7 @@ venv/
 
 # Vercel output
 .vercel/
+dist/
 
 # OS-specific
 .DS_Store
