@@ -1,24 +1,35 @@
 {
-  "name": "Daimokugrama - Sucesores",
-  "short_name": "Daimokugrama",
-  "description": "Aplicación interactiva de Daimokugrama y objetivos para Sucesores.",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#FFE100",
-  "theme_color": "#FFE100",
-  "orientation": "portrait-primary",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ]
+    "name": "YouTube Smart Downloader",
+    "short_name": "YT Smart",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0d0d12",
+    "theme_color": "#ff1a40",
+    "description": "Descarga videos, audio y subtítulos limpios de YouTube de forma rápida y sencilla.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
 }

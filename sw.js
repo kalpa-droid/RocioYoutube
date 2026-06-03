@@ -1,18 +1,17 @@
-const CACHE_NAME = 'daimokugrama-cache-v4';
+const CACHE_NAME = 'yt-smart-v1';
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.png',
-  './icon-192.png',
-  './icon-512.png',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,400;1,700&display=swap',
-  'https://fonts.gstatic.com/s/bangers/v20/i7dFEXt1W2IV3T5C-d80.woff2',
-  'https://fonts.gstatic.com/s/comicneue/v8/4UaHrEJDsxBI1om9tHImq-q5mw.woff2'
+  '/',
+  '/index.html',
+  '/style.css',
+  '/app.js',
+  '/favicon.png',
+  '/manifest.json',
+  '/icons/Icon-192.png',
+  '/icons/Icon-512.png',
+  '/icons/Icon-maskable-192.png',
+  '/icons/Icon-maskable-512.png'
 ];
 
-// Instalar Service Worker y guardar recursos en caché
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -21,7 +20,6 @@ self.addEventListener('install', (e) => {
   );
 });
 
-// Activar Service Worker y limpiar cachés antiguas
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
@@ -36,14 +34,25 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Interceptar peticiones y responder desde caché si está disponible (Offline mode)
 self.addEventListener('fetch', (e) => {
+  // Direct fetch for API calls
+  if (e.request.url.includes('/api/')) {
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
-      return cachedResponse || fetch(e.request).catch(() => {
-        if (e.request.mode === 'navigate') {
-          return caches.match('./index.html');
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(e.request).then((networkResponse) => {
+        // Cache new static requests
+        if (e.request.method === 'GET' && networkResponse.status === 200) {
+          const cacheCopy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(e.request, cacheCopy);
+          });
         }
+        return networkResponse;
       });
     })
   );
