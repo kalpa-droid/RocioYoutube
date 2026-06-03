@@ -17,3 +17,7 @@ dist/
 # OS-specific
 .DS_Store
 Thumbs.db
+
+# Private files
+cookies.txt
+

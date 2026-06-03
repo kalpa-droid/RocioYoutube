@@ -144,8 +144,13 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
                 'quiet': True,
                 'no_warnings': True,
                 'skip_download': True,
-                'cookiesfrombrowser': ('chrome', 'firefox', 'brave', 'opera', 'edge', 'chromium', 'safari', 'vivaldi'),
             }
+            cookies_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cookies.txt')
+            if os.path.exists(cookies_file):
+                ydl_opts['cookiefile'] = cookies_file
+            else:
+                ydl_opts['cookiesfrombrowser'] = ('chrome', 'firefox', 'brave', 'opera', 'edge', 'chromium', 'safari', 'vivaldi')
+            
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(video_url, download=False)
                 
@@ -262,8 +267,13 @@ class AppRequestHandler(SimpleHTTPRequestHandler):
                     'progress_hooks': [make_hook(send_progress)],
                     'quiet': True,
                     'no_warnings': True,
-                    'cookiesfrombrowser': ('chrome', 'firefox', 'brave', 'opera', 'edge', 'chromium', 'safari', 'vivaldi'),
                 }
+                cookies_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cookies.txt')
+                if os.path.exists(cookies_file):
+                    ydl_opts['cookiefile'] = cookies_file
+                else:
+                    ydl_opts['cookiesfrombrowser'] = ('chrome', 'firefox', 'brave', 'opera', 'edge', 'chromium', 'safari', 'vivaldi')
+
 
                 if option_type == 'video':
                     # Best quality video up to selected format_id, merge audio
