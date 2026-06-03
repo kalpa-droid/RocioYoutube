@@ -1,2 +1,10 @@
+[project]
+name = "rocio-youtube"
+version = "1.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "yt-dlp"
+]
+
 [tool.vercel]
 entrypoint = "api.index:handler"
