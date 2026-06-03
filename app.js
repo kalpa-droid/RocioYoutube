@@ -33,6 +33,9 @@ const urlInput = document.getElementById('urlInput');
 const btnAnalyze = document.getElementById('btnAnalyze');
 const loader = document.getElementById('loader');
 const resultContainer = document.getElementById('resultContainer');
+const fallbackContainer = document.getElementById('fallbackContainer');
+const btnFallbackDownload = document.getElementById('btnFallbackDownload');
+const fallbackQuality = document.getElementById('fallbackQuality');
 const videoCard = document.getElementById('videoCard');
 const videoThumbnail = document.getElementById('videoThumbnail');
 const videoDuration = document.getElementById('videoDuration');
@@ -42,6 +45,7 @@ const optionsList = document.getElementById('optionsList');
 const tabVideo = document.getElementById('tabVideo');
 const tabAudio = document.getElementById('tabAudio');
 const tabSubtitles = document.getElementById('tabSubtitles');
+
 
 let currentVideoData = null;
 let activeTab = 'video';
@@ -58,7 +62,7 @@ async function analyzeUrl() {
   // Show loader and hide results/fallback
   loader.style.display = 'flex';
   resultContainer.style.display = 'none';
-  if (window.fallbackContainer) {
+  if (fallbackContainer) {
     fallbackContainer.style.display = 'none';
   }
   btnAnalyze.disabled = true;
@@ -76,7 +80,7 @@ async function analyzeUrl() {
     resultContainer.style.display = 'block';
   } catch (error) {
     console.error('Error al analizar la URL:', error.message);
-    if (window.fallbackContainer) {
+    if (fallbackContainer) {
       fallbackContainer.style.display = 'block';
     } else {
       alert(`Error al analizar la URL: ${error.message}`);
@@ -86,6 +90,7 @@ async function analyzeUrl() {
     btnAnalyze.disabled = false;
   }
 }
+
 
 
 function displayVideoInfo() {
